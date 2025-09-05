@@ -150,6 +150,14 @@ switch($ch) {
 		$smarty->assign('show_center',$show_center);
 		$smarty->assign('xajax_javascript', $xajax->getJavascript('/xajax/'));
 		break;
+	case 'remark':
+		$title = "備註";
+		$sid = "view01";
+		$modal = $m_location."/sub_modal/project/func08/dispatch_ms/dispatch_contract_remark_modify.php";
+		include $modal;
+		$smarty->assign('show_center',$show_center);
+		$smarty->assign('xajax_javascript', $xajax->getJavascript('/xajax/'));
+		break;
 	case 'dispatch_attendance':
 		$title = "人員派工";
 		if (empty($sid))

@@ -38,7 +38,8 @@ $list_view=<<<EOT
 				<th scope="col" class="text-center text-nowrap" style="width:5%;">契約數量</th>
 				<th scope="col" class="text-center text-nowrap" style="width:7%;">實際(工/次/台/只)數</th>
 				<th scope="col" class="text-center text-nowrap" style="width:5%;">複價</th>
-				<th scope="col" class="text-center text-nowrap" style="width:43%;">人員派工</th>
+				<th scope="col" class="text-center text-nowrap" style="width:23%;">人員派工</th>
+				<th scope="col" class="text-center text-nowrap" style="width:20%;">備註</th>
 				<th scope="col" class="text-center text-nowrap" style="width:3%;">移除</th>
 			</tr>
 		</thead>
@@ -51,7 +52,7 @@ $list_view=<<<EOT
 			<tr style="border-bottom: 1px solid #000;">
 				<th scope="col" colspan="6" class="text-end size14 weight">合計</th>
 				<th scope="col" class="text-center text-nowrap"></th>
-				<th scope="col" colspan="2"></th>
+				<th scope="col" colspan="3"></th>
 			</tr>
 		</tfoot>
 	</table>
@@ -172,15 +173,35 @@ $list_view
 
 				$('td:eq(7)', nRow).html( '<div class="mytable w-100"><div class="myrow"><div class="mycell" style="width:20px;">'+show_dispatch_attendance_btn+'</div><div class="mycell" style="width:95%;">'+attendance_list+'</div></div></div>' );
 
+				//備註
+				
+				var remark_url = "openfancybox_edit('/index.php?ch=remark&auto_seq="+aData[7]+"&fm=$fm',500,220,'');";
+				if (aData[6] == null || aData[6] == "") {
+					if ('$disabled' == "disabled") {
+						var remark = '<span class="size14 weight text-nowrap" style="color:#777777ff;"></span>';
+					} else {
+						var remark = '<button type="button" class="btn btn-light btn-sm px-2 size14 weight text-nowrap" style="color:#777777ff" onclick="'+remark_url+'" title="備註">請輸入工項對應任務內容</button>';
+					}
+				} else {
+					if ('$disabled' == "disabled") {
+						var remark = '<span class="size14 weight text-nowrap" style="color:#777777ff;">' + aData[6] + '</span>';
+					} else {
+						var remark = '<button type="button" class="btn btn-light btn-sm px-2 size14 weight text-nowrap" style="color:#777777ff" onclick="'+remark_url+'" title="備註">' + aData[6] + '</button>';
+					}
+				}
+
+				//移除
+				$('td:eq(8)', nRow).html( '<div class="d-flex justify-content-center align-items-center text-center" style="height:auto;min-height:32px;">'+remark+'</div>' );
+
 				if ('$disabled' == "disabled") {
 					$('td:eq(8)', nRow).html( '' );
 				} else {
 					var mdel = "dispatch_contract_details_myDel('"+aData[7]+"','"+aData[8]+"','"+aData[9]+"','"+aData[0]+"');";
 					var mdel_btn = '<div class="inline" style="margin: 0 7px 0 7px;"><a href="javascript:void(0);" onclick="'+mdel+'" title="移除"><i class="bi bi-x-lg size12"></i></a></div>';
 					
-					$('td:eq(8)', nRow).html( '<div class="text-center">'+mdel_btn+'</div>' );
+					$('td:eq(9)', nRow).html( '<div class="text-center">'+mdel_btn+'</div>' );
 				}
-
+				
 
 				return nRow;
 			},
