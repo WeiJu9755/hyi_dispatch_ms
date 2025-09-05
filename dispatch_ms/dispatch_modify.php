@@ -1020,7 +1020,7 @@ $style_css
 								</div> 
 								$show_notify_times
 							</div>
-							<div class="col-lg-3 col-sm-12 col-md-12 p-2">
+							<!--<div class="col-lg-3 col-sm-12 col-md-12 p-2">
 								<div class="w-100 mt-3">
 									<div class="size14 weight">工安注意事項</div>
 									<div class="w-100">
@@ -1035,7 +1035,7 @@ $style_css
 										<textarea class="inputtext w-100 p-3" id="todolist" name="todolist" cols="80" rows="2" style="max-width: 420px;">$todolist</textarea>
 									</div> 
 								</div>
-							</div>
+							</div>-->
 						</div>
 					</div>					
 					<hr class="style_b">
