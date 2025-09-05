@@ -33,6 +33,11 @@ function processform($aFormValues){
 		return $objResponse;
 		exit;
 	}
+	if (trim($aFormValues['contract_detail_seq']) == "")	{
+		$objResponse->script("jAlert('警示', '請選擇合約項次', 'red', '', 2000);");
+		return $objResponse;
+		exit;
+	}
 	if (trim($aFormValues['warehouse']) == "")	{
 		$objResponse->script("jAlert('警示', '請選擇倉庫別', 'red', '', 2000);");
 		return $objResponse;
@@ -79,6 +84,16 @@ function processform($aFormValues){
 		$contract_id		= trim($aFormValues['contract_id']);
 		$remarks			= trim($aFormValues['remarks']);
 		$memberID			= trim($aFormValues['memberID']);
+
+		// 合約項次分解
+		 $contract_detail_seq_raw = trim($aFormValues['contract_detail_seq']);
+
+		// 用 | 拆成陣列
+		list($seq, $work_project) = explode('|', $contract_detail_seq_raw, 2);
+
+		// 安全處理（避免 SQL injection）
+		$seq = addslashes($seq);
+		$work_project = addslashes($work_project);
 		
 	
 		//存入實體資料庫中
@@ -96,7 +111,7 @@ function processform($aFormValues){
 			exit;
 		}
 	  
-		$Qry="INSERT INTO dispatch_material_details (dispatch_id,contract_id,material_no,warehouse,stock_out_qty,remarks,last_modify) values ('$dispatch_id','$contract_id','$material_no','$warehouse','$stock_out_qty','$remarks',now())";
+		$Qry="INSERT INTO dispatch_material_details (dispatch_id,seq,work_project,contract_id,material_no,warehouse,stock_out_qty,remarks,last_modify) values ('$dispatch_id','$seq','$work_project','$contract_id','$material_no','$warehouse','$stock_out_qty','$remarks',now())";
 		$mDB->query($Qry);
 
         $mDB->remove();
@@ -149,6 +164,23 @@ if ($mDB->rowCount() > 0) {
 		$ch_warehouse = $row['caption'];
 		$select_warehouse .= "<option value=\"$ch_warehouse\" ".mySelect($ch_warehouse,$warehouse).">$ch_warehouse</option>";
 	}
+}
+
+//載入合約別
+$Qry="SELECT contract_id,seq,work_project 
+FROM contract_details
+WHERE contract_id = '$contract_id'";
+$mDB->query($Qry);
+$select_contract_detail_seq = "";
+$select_contract_detail_seq .= "<option></option>";
+
+if ($mDB->rowCount() > 0) {
+	while ($row=$mDB->fetchRow(2)) {
+		$seq = $row['seq'];
+		$work_project = $row['work_project'];
+		$select_contract_detail_seq .= "<option value=\"{$seq}|{$work_project}\">{$seq} {$work_project}</option>";
+	}
+		
 }
 
 
@@ -243,6 +275,14 @@ $style_css
 							<datalist id="material_no_list">
 								$material_no_list
 							</datalist>
+						</div> 
+					</div>
+					<div>
+						<div class="field_div1">合約項次:</div> 
+						<div class="field_div2">
+							<select id="contract_detail_seq" name="contract_detail_seq" placeholder="合約項次" style="width:100%;max-width:250px;" onchange="setEdit();">
+								$select_contract_detail_seq
+							</select>
 						</div> 
 					</div>
 					<div>

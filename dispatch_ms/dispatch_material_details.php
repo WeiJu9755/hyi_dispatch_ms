@@ -35,6 +35,7 @@ $list_view=<<<EOT
 				<th scope="col" class="text-center text-nowrap" style="width:10%;">料號</th>
 				<th scope="col" class="text-center text-nowrap" style="width:27%;">物料名稱/使用機具</th>
 				<th scope="col" class="text-center text-nowrap" style="width:5%;">單位</th>
+				<th scope="col" class="text-center text-nowrap" style="width:5%;">合約項次</th>
 				<th scope="col" class="text-center text-nowrap" style="width:10%;">倉庫別</th>
 				<th scope="col" class="text-center text-nowrap" style="width:10%;">數量</th>
 				<th scope="col" class="text-center text-nowrap" style="width:27%;">備註</th>
@@ -93,44 +94,66 @@ $list_view
 				seq = iDisplayIndex + 1;
 				$('td:eq(0)', nRow).html( '<div class="text-center size14 weight">('+seq+')</div>' );
 
+				// 料號
 				var material_no = "";
 				if (aData[1] != null && aData[1] != "")
 					material_no = aData[1];
 
 				$('td:eq(1)', nRow).html( '<div class="text-center size14 blue02 weight">'+material_no+'</div>' );
 
+				// 物料名稱/使用機具
 				var material_name = "";
 				if (aData[2] != null && aData[2] != "")
 					material_name = aData[2];
 
 				$('td:eq(2)', nRow).html( '<div class="text-start size14 weight">'+material_name+'</div>' );
 
+				//單位
 				var unit = "";
 				if (aData[3] != null && aData[3] != "")
 					unit = aData[3];
 
 				$('td:eq(3)', nRow).html( '<div class="text-center size14">'+unit+'</div>' );
 
+				// 合約項次
+				var contract_seq = aData[11] || "";
+				var work_project = aData[12] || "";
+
+				// 用 Bootstrap Tooltip
+				var show = $('<div class="d-flex justify-content-center align-items-center size14 text-center" ' +
+							'style="height:auto;min-height:32px;" ' +
+							'data-bs-toggle="tooltip" data-bs-placement="top" title="' + work_project + '">' +
+							contract_seq +
+							'</div>');
+
+				$('td:eq(4)', nRow).html(show);
+
+				// 初始化 Bootstrap Tooltip（DataTables 重繪後要重新初始化）
+				$('[data-bs-toggle="tooltip"]', nRow).tooltip();
+
+
+				// 倉庫別
 				var warehouse = "";
 				if (aData[4] != null && aData[4] != "")
 					warehouse = aData[4];
 
-				$('td:eq(4)', nRow).html( '<div class="text-center size14">'+warehouse+'</div>' );
+				$('td:eq(5)', nRow).html( '<div class="text-center size14">'+warehouse+'</div>' );
 
+				// 數量
 				var stock_out_qty = "";
 				if (aData[5] != null && aData[5] != 0)
 					stock_out_qty = number_format(aData[5]);
 
-				$('td:eq(5)', nRow).html( '<div class="text-center size14 red weight">'+stock_out_qty+'</div>' );
+				$('td:eq(6)', nRow).html( '<div class="text-center size14 red weight">'+stock_out_qty+'</div>' );
 
 				//備註
 				var remarks = "";
 				if (aData[6] != null && aData[6] != "")
 					remarks = aData[6];
 
-				$('td:eq(6)', nRow).html( '<div class="text-start size14">'+remarks+'</div>' );
+				$('td:eq(7)', nRow).html( '<div class="text-start size14">'+remarks+'</div>' );
 
-
+				// 處理
 				var show_btn = '';
 				
 				if ('$disabled' == "disabled") {
@@ -144,7 +167,7 @@ $list_view
 							+'</div>';
 				}
 				
-				$('td:eq(7)', nRow).html( '<div class="text-center">'+show_btn+'</div>' );
+				$('td:eq(8)', nRow).html( '<div class="text-center">'+show_btn+'</div>' );
 
 
 				return nRow;
