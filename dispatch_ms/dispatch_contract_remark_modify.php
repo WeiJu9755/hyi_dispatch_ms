@@ -24,7 +24,7 @@ function processform($aFormValues){
 	
 	$auto_seq		= trim($aFormValues['auto_seq']);
 	$memberID		= trim($aFormValues['memberID']);
-	$remark			= ceil(trim($aFormValues['remark']));
+	$remark			= trim($aFormValues['remark']);
 
 	//存入實體資料庫中
 	$mDB = "";
