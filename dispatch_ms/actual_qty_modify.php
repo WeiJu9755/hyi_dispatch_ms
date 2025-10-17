@@ -25,6 +25,7 @@ function processform($aFormValues){
 	$auto_seq		= trim($aFormValues['auto_seq']);
 	$memberID		= trim($aFormValues['memberID']);
 	$actual_qty		= ceil(trim($aFormValues['actual_qty']));
+	$status        	= ($actual_qty > 0) ? '完成' : '未完成';
 
 	//存入實體資料庫中
 	$mDB = "";
@@ -32,6 +33,7 @@ function processform($aFormValues){
 	
 	$Qry = "UPDATE dispatch_contract_details set
 			`actual_qty` = '$actual_qty'
+			,`status` = '$status'
 			 ,last_modify = now()
 			 ,makeby	= '$memberID'
 			where auto_seq = '$auto_seq'";
