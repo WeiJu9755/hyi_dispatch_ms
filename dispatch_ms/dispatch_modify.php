@@ -123,107 +123,87 @@ function SaveValue($aFormValues){
 	return $objResponse;
 }
 
-//送出前讓系統再檢查乙次
+// 送出前讓系統再檢查乙次
 $xajax->registerFunction("Checkall");
 function Checkall($aFormValues){
 
-	$objResponse = new xajaxResponse();
-	
-	$web_id				= trim($aFormValues['web_id']);
-	$auto_seq			= trim($aFormValues['auto_seq']);
-	$project_id			= trim($aFormValues['project_id']);
-	$auth_id			= trim($aFormValues['auth_id']);
-	$dispatch_id		= trim($aFormValues['dispatch_id']);
+    $objResponse = new xajaxResponse();
 
-	$warning_list = "";
+    $web_id      = trim($aFormValues['web_id']);
+    $auto_seq    = trim($aFormValues['auto_seq']);
+    $project_id  = trim($aFormValues['project_id']);
+    $auth_id     = trim($aFormValues['auth_id']);
+    $dispatch_id = trim($aFormValues['dispatch_id']);
 
-	$mDB = "";
-	$mDB = new MywebDB();
+    // 分成「錯誤」(擋送出) 與「提醒」(不擋送出)
+    $error_list  = "";
+    $notice_list = "";
 
-	$mDB2 = "";
-	$mDB2 = new MywebDB();
-	
-	//檢查是否有合約工項/派工資料
-	$Qry="SELECT a.*,b.work_project as contract_work_project FROM dispatch_contract_details a
-		LEFT JOIN contract_details b ON b.contract_id = a.contract_id AND b.seq = a.seq
-		WHERE a.dispatch_id = '$dispatch_id'
-		ORDER BY a.auto_seq";
-	$mDB->query($Qry);
-	if ($mDB->rowCount() > 0) {
-		while ($row=$mDB->fetchRow(2)) {
+    $mDB  = new MywebDB();
+    $mDB2 = new MywebDB();
 
-			$contract_id = $row['contract_id'];
-			$seq = $row['seq'];
-			$work_project = $row['contract_work_project'];
-			$actual_qty = $row['actual_qty'];
+    // 檢查是否有合約工項/派工資料
+    $Qry = "SELECT a.*, b.work_project AS contract_work_project
+            FROM dispatch_contract_details a
+            LEFT JOIN contract_details b
+              ON b.contract_id = a.contract_id AND b.seq = a.seq
+            WHERE a.dispatch_id = '$dispatch_id'
+            ORDER BY a.auto_seq";
+    $mDB->query($Qry);
 
-			if ($actual_qty <= 0) {
-				$warning_list .= "<div class=\"w-100\">合約項次 $seq $work_project 實際數不可小或等於0</div>";
-			}
+    if ($mDB->rowCount() > 0) {
+        while ($row = $mDB->fetchRow(2)) {
 
-			//檢查是否有人員派工
-			$Qry2="SELECT * FROM dispatch_attendance_sub
-				WHERE dispatch_id = '$dispatch_id' AND contract_id = '$contract_id' AND seq = '$seq'
-				ORDER BY auto_seq";
-			$mDB2->query($Qry2);
-			if ($mDB2->rowCount() <= 0) {
-				$warning_list .= "<div class=\"w-100\">合約項次 $seq $work_project 沒有人員派工資料</div>";
-			}
+            $contract_id  = $row['contract_id'];
+            $seq          = $row['seq'];
+            $work_project = $row['contract_work_project'];
+            $actual_qty   = $row['actual_qty'];
 
+            // ✅ 實際數<=0：只做提醒，不擋送出
+            if ($actual_qty <= 0) {
+              $notice_list .= '<div class="w-100 " style="color:blue"><i class="bi bi-info-circle me-1"></i>合約項次 <span class="badge bg-secondary">'.$seq.'</span> '.$work_project.'：本次實際數為 0，狀態：<span class="badge bg-warning text-dark">未完工</span>。此為提醒，不影響送出。</div>';
+            }
 
-		}
-	} else {
+            // 檢查是否有人員派工（此為錯誤，會擋送出）
+            $Qry2 = "SELECT 1
+                     FROM dispatch_attendance_sub
+                     WHERE dispatch_id = '$dispatch_id'
+                       AND contract_id  = '$contract_id'
+                       AND seq          = '$seq'
+                     LIMIT 1";
+            $mDB2->query($Qry2);
+            if ($mDB2->rowCount() <= 0) {
+                $error_list .= "<div class=\"w-100\">合約項次 $seq $work_project 沒有人員派工資料</div>";
+            }
+        }
+    } else {
+        // 沒有任何合約工項/派工資料 -> 會擋送出
+        $error_list .= "<div class=\"w-100\">沒有任何合約工項/派工資料</div>";
+    }
 
-		$warning_list .= "<div class=\"w-100\">沒有任何合約工項/派工資料</div>";
+    $mDB2->remove();
+    $mDB->remove();
 
-	}
+    // 組出顯示的 HTML（錯誤在前，提醒在後）
+    $msg_html = "";
+    if (!empty($error_list))  $msg_html .= "<div class=\"text-danger\">$error_list</div>";
+    if (!empty($notice_list)) $msg_html .= "<div class=\"text-secondary\">$notice_list</div>";
 
-	/*
-	//檢查是否有使用 物料名稱/使用機具
-	$Qry="SELECT * FROM dispatch_contract_details
-		WHERE dispatch_id = '$dispatch_id'
-		ORDER BY auto_seq";
-	$mDB->query($Qry);
+    // 更新畫面
+    $objResponse->assign("warning_list".$auto_seq, "innerHTML", $msg_html);
 
-	$manpower_total2 = 0;
-	$attendance_day_total2 = 0;
+    // 只要有錯誤就擋；只有提醒（或完全沒訊息）就放行
+    if (!empty($error_list)) {
+        $objResponse->script("jAlert('警示', '仍有需處理的檢查事項', 'red', '', 2000);");
+        $objResponse->script("$('#myConfirmSending').prop('disabled', true);");
+    } else {
+        $objResponse->script("jAlert('提醒', '目前看來資料可送出，僅有提醒項目請再留意', 'green', '', 2000);");
+        $objResponse->script("$('#myConfirmSending').prop('disabled', false);");
+        // 若要自動直接送出，可在此處呼叫：
+        // ConfirmSending($aFormValues);
+    }
 
-	if ($mDB->rowCount() > 0) {
-	} else {
-		$warning_list .= "<div class=\"w-100\">沒有任何工作項目資料</div>";
-	}
-	*/
-
-	
-
-
-	$mDB2->remove();
-	$mDB->remove();
-
-	//更新
-	if (!empty($warning_list)) {
-
-		$objResponse->assign("warning_list".$auto_seq,"innerHTML",$warning_list);
-
-		$objResponse->script("jAlert('警示', '仍有需處理的檢查事項', 'red', '', 2000);");
-
-		$objResponse->script("$('#myConfirmSending').prop('disabled', true);");
-
-	} else {
-
-		$objResponse->assign("warning_list".$auto_seq,"innerHTML","");
-		$objResponse->script("jAlert('警示', '目前看來資料應沒問題了，不過仍請您再自行確認，謝謝', 'green', '', 2000);");
-
-		$objResponse->script("$('#myConfirmSending').prop('disabled', false);");
-
-
-		//ConfirmSending($aFormValues);
-	
-	}
-
-		
-	
-	return $objResponse;
+    return $objResponse;
 }
 
 $xajax->registerFunction("ConfirmSending");
@@ -246,48 +226,7 @@ function ConfirmSending($aFormValues){
 	$mDB2 = "";
 	$mDB2 = new MywebDB();
 
-	/*
-	//將出工名單的每個員工的工時寫入至 dispatch_wt_month
-	$Qry="SELECT a.employee_id,a.attendance_day,b.company_id,b.team_id as dispatch_team_id,YEAR(b.dispatch_date) AS dispatch_year,MONTH(b.dispatch_date) AS dispatch_month,DAY(b.dispatch_date) AS dispatch_day FROM dispatch_member a
-	LEFT JOIN dispatch b ON b.dispatch_id = a.dispatch_id
-	WHERE a.dispatch_id = '$dispatch_id'
-	ORDER BY a.dispatch_id,a.employee_id";
-	$mDB->query($Qry);
-	if ($mDB->rowCount() > 0) {
-		while ($row=$mDB->fetchRow(2)) {
-			$dispatch_year = $row['dispatch_year'];
-			$dispatch_month = $row['dispatch_month'];
-			$dispatch_day = (int)$row['dispatch_day'];
-			$company_id = $row['company_id'];
-			$dispatch_team_id = $row['dispatch_team_id'];
-			$employee_id = $row['employee_id'];
-			$attendance_day = round($row['attendance_day']/8,4);
-
-			//更新至 dispatch_wt_month
-			//先檢查員工資料是否已存在
-			$Qry2="SELECT * FROM dispatch_wt_month 
-				WHERE dispatch_year = '$dispatch_year' AND dispatch_month = '$dispatch_month' AND company_id = '$company_id' AND team_id = '$dispatch_team_id' AND employee_id = '$employee_id'";
-			$mDB2->query($Qry2);
-			if ($mDB2->rowCount() > 0) {
-				//已存在則進行更新
-				$wt = "wt_".$dispatch_day;
-				$Qry2="UPDATE dispatch_wt_month set ".$wt." = '$attendance_day'
-					WHERE dispatch_year = '$dispatch_year' AND dispatch_month = '$dispatch_month' AND company_id = '$company_id' AND team_id = '$dispatch_team_id' AND employee_id = '$employee_id'";
-				$mDB2->query($Qry2);
-			} else {
-				//不存在則進行新增
-				$wt = "wt_".$dispatch_day;
-				$Qry2="INSERT INTO dispatch_wt_month (dispatch_year,dispatch_month,company_id,team_id,employee_id,".$wt.") 
-					VALUES ('$dispatch_year','$dispatch_month','$company_id','$dispatch_team_id','$employee_id','$attendance_day')";
-				$mDB2->query($Qry2);
-			}
-		}
-	}
-	*/
-
-	//產生 物料/使用機具 之出庫單作業
-	//產生主檔資料
-	//自動產生 stock_out_id
+	
 	$today = date("Ymd");
 
 	//取得最後代號
@@ -946,7 +885,7 @@ $style_css
 	<div id="full" class="card-body" data-overlayscrollbars-initialize>
 		<div id="info_container">
 			<form method="post" id="modifyForm" name="modifyForm" enctype="multipart/form-data" action="javascript:void(null);">
-			<div class="w-100 mb-5">
+				<div class="w-100 mb-5">
 				<div class="field_container3">
 					<div class="container-fluid">
 						<div class="row">
@@ -995,7 +934,7 @@ $style_css
 									</div>
 								</div> 
 								<div class="w-100 text-center mt-1">
-									<textarea $disabled class="inputtext w-100 p-3" id="content" name="content" cols="80" rows="5" style="max-width: 840px;" onchange="setEdit();">$content</textarea>
+									<textarea class="inputtext w-100 p-3" id="content" name="content" cols="80" rows="5" style="max-width: 840px;" onchange="setEdit();">$content</textarea>
 									<!--
 									<script>
 										function copyToClipboard() {
