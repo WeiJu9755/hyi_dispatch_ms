@@ -15,6 +15,7 @@
 	$mem_row = getkeyvalue2('memberinfo','member',"member_no = '$memberID'",'admin,advanced,checked,luck,admin_readonly,advanced_readonly');
 	$super_admin = $mem_row['admin'];
 	$super_advanced = $mem_row['advanced'];
+	$resignation_filter = "(a.resignation_date IS NULL OR a.resignation_date = '')";
 
 
 	$site_db = $_GET['site_db'];
@@ -166,6 +167,12 @@
 
 
 	if (($powerkey=="A") || ($super_admin=="Y")) {
+		
+		if ($sWhere == "") {
+				$sWhere = "WHERE $resignation_filter ";
+			} else {
+				$sWhere .= " AND $resignation_filter ";
+			}
 
 		$sQuery = "
 			SELECT SQL_CALC_FOUND_ROWS ".str_replace(" , ", " ", implode(", ", $aColumns))."
@@ -189,10 +196,11 @@
 
 	} else {
 
-		if ($sWhere=="")
-			$sWhere = "WHERE (b.member_no = '$memberID' AND a.employee_id <> '') ";
-		else
-			$sWhere .= " and (b.member_no = '$memberID' AND a.employee_id <> '') ";
+		if ($sWhere == "") {
+				$sWhere = "WHERE (b.member_no = '$memberID' AND a.employee_id <> '') AND $resignation_filter ";
+			} else {
+				$sWhere .= " AND (b.member_no = '$memberID' AND a.employee_id <> '') AND $resignation_filter ";
+			}
 
 
 		$sQuery = "
