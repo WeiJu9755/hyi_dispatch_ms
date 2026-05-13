@@ -115,7 +115,7 @@ function processform($aFormValues){
 		$project_id			= trim($aFormValues['project_id']);
 		$auth_id			= trim($aFormValues['auth_id']);
 		$dispatch_date		= trim($aFormValues['dispatch_date']);
-		$company_id			= trim($aFormValues['company_id']);
+		$input_company_id	= trim($aFormValues['input_company_id']);
 		//$team_id			= trim($aFormValues['team_id']);
 		$member_no			= trim($aFormValues['member_no']);
 		$contract_id		= trim($aFormValues['contract_id']);
@@ -126,7 +126,7 @@ function processform($aFormValues){
 		//$mDB = "";
 		//$mDB = new MywebDB();
 	  
-		$Qry="insert into dispatch (web_id,project_id,auth_id,dispatch_id,dispatch_date,company_id,contract_id,makeby,create_date,last_modify) values ('$web_id','$project_id','$auth_id','$new_dispatch_id','$dispatch_date','$company_id','$contract_id','$member_no',now(),now())";
+		$Qry="insert into dispatch (web_id,project_id,auth_id,dispatch_id,dispatch_date,company_id,contract_id,makeby,create_date,last_modify) values ('$web_id','$project_id','$auth_id','$new_dispatch_id','$dispatch_date','$input_company_id','$contract_id','$member_no',now(),now())";
 		$mDB->query($Qry);
 		//再取出auto_seq
 		$Qry="select auto_seq from dispatch where dispatch_id = '$new_dispatch_id' order by auto_seq desc limit 0,1";
@@ -256,6 +256,23 @@ if ($mDB->rowCount() > 0) {
 		$select_contract .= "<option value=\"$ch_contract_id\" ".mySelect($ch_contract_id,$contract_id).">$ch_contract_id &nbsp;&nbsp; 【{$ch_contract_abbreviation}】 &nbsp;&nbsp; $ch_contract_caption</option>";
 	}
 }
+
+//載入公司別
+$Qry = "SELECT company_id, company_name FROM company";
+$mDB->query($Qry);
+
+$select_company = "<option value=\"\"></option>";
+
+if ($mDB->rowCount() > 0) {
+    while ($row = $mDB->fetchRow(2)) {
+        $company_id   = htmlspecialchars($row['company_id'], ENT_QUOTES);
+        $company_name = htmlspecialchars($row['company_name'], ENT_QUOTES);
+
+        $select_company .= "<option value=\"$company_id\">{$company_name}</option>";
+    }
+}
+
+
 /*
 //載入所有團隊
 $Qry="select team_id,team_name from team order by auto_seq";
@@ -371,12 +388,10 @@ $style_css
 					<div>
 						<div class="field_div1">公司:</div> 
 						<div class="field_div2 pt-3">
-							$company_id $company_name
-							<!--
-							<select id="company_id" name="company_id" placeholder="請選擇公司" style="width:100%;max-width:550px;">
+
+							<select id="input_company_id" name="input_company_id" placeholder="請選擇公司" style="width:100%;max-width:550px;">
 								$select_company
 							</select>
-							-->
 						</div> 
 					</div>
 					<!--
