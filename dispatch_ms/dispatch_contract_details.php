@@ -190,8 +190,9 @@ $list_view
 					}
 				}
 
-				//移除
 				$('td:eq(8)', nRow).html( '<div class="d-flex justify-content-center align-items-center text-center" style="height:auto;min-height:32px;">'+remark+'</div>' );
+
+				//移除
 
 				if ('$disabled' == "disabled") {
 					$('td:eq(8)', nRow).html( '' );
