@@ -247,13 +247,13 @@ $style_css
 						<div class="field_div1">開始時間:</div> 
 						<div class="field_div2">
 							<div class="input-group w-100 clockpicker_start" style="max-width:220px;">
-								<input readonly type="text" class="form-control" id="attendance_start" name="attendance_start" placeholder="請輸入開始時間" value="$def_attendance_start">
+								<input type="text" class="form-control" id="attendance_start" name="attendance_start" placeholder="請輸入開始時間" value="$def_attendance_start">
 								<button class="btn btn-outline-secondary input-group-append input-group-addon" type="button"><i class="bi bi-clock"></i></button>
 								<button class="btn btn-outline-secondary input-group-append input-group-addon" type="button" onclick="clear_attendance_start();"><i class="bi bi-x-lg"></i></button>
 							</div>
 							<script type="text/javascript">
 								var clockInput = $('.clockpicker_start').clockpicker({
-									autoclose: false
+									autoclose: true
 								});
 							</script>
 						</div> 
@@ -262,13 +262,13 @@ $style_css
 						<div class="field_div1">迄止時間:</div> 
 						<div class="field_div2">
 							<div class="input-group w-100 clockpicker_end" style="max-width:220px;">
-								<input readonly type="text" class="form-control" id="attendance_end" name="attendance_end" placeholder="請輸入迄止時間" value="$def_attendance_end">
+								<input type="text" class="form-control" id="attendance_end" name="attendance_end" placeholder="請輸入迄止時間" value="$def_attendance_end">
 								<button class="btn btn-outline-secondary input-group-append input-group-addon" type="button"><i class="bi bi-clock"></i></button>
 								<button class="btn btn-outline-secondary input-group-append input-group-addon" type="button" onclick="clear_attendance_end();"><i class="bi bi-x-lg"></i></button>
 							</div>
 							<script type="text/javascript">
 								var clockInput = $('.clockpicker_end').clockpicker({
-									autoclose: false
+									autoclose: true
 								});
 							</script>
 						</div> 
