@@ -8,6 +8,15 @@ session_start();
 $memberID = $_SESSION['memberID'];
 $powerkey = $_SESSION['powerkey'];
 
+$mem_row = getkeyvalue2('memberinfo','member',"member_no = '$memberID'",'admin,advanced,checked,luck,admin_readonly,advanced_readonly');
+$super_admin = $mem_row['admin'];
+
+$pjItemManager = false;
+//檢查是否為指定管理人(小隊長)
+$pjmyfellow_row = getkeyvalue2($site_db."_info","pjmyfellow","web_id = '$web_id' and project_id = '$project_id' and auth_id = '$auth_id' and pro_id = 'squadleader' and member_no = '$memberID'","count(*) as enable_count");
+$enable_count =$pjmyfellow_row['enable_count'];
+if ($enable_count > 0)
+	$pjItemManager = true;
 
 //計算請假時間
 function calculateLeaveHours($startTime, $endTime) {
@@ -165,16 +174,16 @@ function Checkall($aFormValues){
             }
 
             // 檢查是否有人員派工（此為錯誤，會擋送出）
-            $Qry2 = "SELECT 1
-                     FROM dispatch_attendance_sub
-                     WHERE dispatch_id = '$dispatch_id'
-                       AND contract_id  = '$contract_id'
-                       AND seq          = '$seq'
-                     LIMIT 1";
-            $mDB2->query($Qry2);
-            if ($mDB2->rowCount() <= 0) {
-                $error_list .= "<div class=\"w-100\">合約項次 $seq $work_project 沒有人員派工資料</div>";
-            }
+            // $Qry2 = "SELECT 1
+            //          FROM dispatch_attendance_sub
+            //          WHERE dispatch_id = '$dispatch_id'
+            //            AND contract_id  = '$contract_id'
+            //            AND seq          = '$seq'
+            //          LIMIT 1";
+            // $mDB2->query($Qry2);
+            // if ($mDB2->rowCount() <= 0) {
+            //     $error_list .= "<div class=\"w-100\">合約項次 $seq $work_project 沒有人員派工資料</div>";
+            // }
         }
     } else {
         // 沒有任何合約工項/派工資料 -> 會擋送出
@@ -543,7 +552,7 @@ if ($total > 0) {
 	$last_webpush = $row['last_webpush'];
 
 	$contract = "";
-	if (!empty(contract_abbreviation)) {
+	if (!empty($contract_abbreviation)) {
 		$contract = $contract_abbreviation;
 	} else {
 		$contract = $contract_caption;
@@ -658,20 +667,42 @@ else
 if (!($detect->isMobile() && !$detect->isTablet())) {
 	$isMobile = 0;
 	
-
-$show_fellow_btn=<<<EOT
+if($super_admin == "Y" || $ConfirmSending == "N" || $pjItemManager = true){
+	$show_fellow_btn=<<<EOT
 <div class="btn-group" role="group">
-	<button $disabled type="button" class="btn btn-danger text-nowrap px-4" onclick="openfancybox_edit('/index.php?ch=ch_contract&dispatch_id=$dispatch_id&contract_id=$contract_id&fm=$fm',1024,'96%','');"><i class="bi bi-plus-circle"></i>&nbsp;新增合約工作項目</button>
+<button $disabled type="button" class="btn btn-danger text-nowrap px-4" onclick="openfancybox_edit('/index.php?ch=ch_contract&dispatch_id=$dispatch_id&contract_id=$contract_id&fm=$fm',1024,'96%','');"><i class="bi bi-plus-circle"></i>&nbsp;新增合約工作項目</button>
 	<button type="button" class="btn btn-success text-nowrap px-4" onclick="dispatch_member_myDraw();"><i class="bi bi-arrow-repeat"></i>&nbsp;重整</button>
 </div>
-EOT; 
 
+EOT; 
+}else{
+		$show_fellow_btn=<<<EOT
+<div class="btn-group" role="group">
+
+	<button type="button" class="btn btn-success text-nowrap px-4" onclick="dispatch_member_myDraw();"><i class="bi bi-arrow-repeat"></i>&nbsp;重整</button>
+
+</div>
+
+EOT; 
+}
+
+
+if ($ConfirmSending == "Y") {
+	$show_fellow_btn2=<<<EOT
+<div class="btn-group" role="group">
+
+	<button type="button" class="btn btn-success text-nowrap px-4" onclick="dispatch_material_details_myDraw();"><i class="bi bi-arrow-repeat"></i>&nbsp;重整</button>
+</div>
+EOT; 
+	} else {
 $show_fellow_btn2=<<<EOT
 <div class="btn-group" role="group">
 	<button $disabled type="button" class="btn btn-danger px-4" onclick="openfancybox_edit('/index.php?ch=dispatch_material_details_add&dispatch_id=$dispatch_id&contract_id=$contract_id&fm=$fm',800,'96%','');"><i class="bi bi-plus-circle"></i>&nbsp;新增物料名稱/使用機具</button>
 	<button type="button" class="btn btn-success text-nowrap px-4" onclick="dispatch_material_details_myDraw();"><i class="bi bi-arrow-repeat"></i>&nbsp;重整</button>
 </div>
 EOT; 
+	}
+
 
 
 $style_css=<<<EOT
@@ -796,28 +827,39 @@ EOT;
 $warning_list = "warning_list".$auto_seq;
 
 $show_ConfirmSending = "";
+if ($super_admin == "Y") {
 
-	if ($ConfirmSending == "Y") {
+    if ($ConfirmSending == "Y") {
 
-$show_ConfirmSending=<<<EOT
-				<div class="w-100 text-center">
-					<button disabled type="button" class="btn btn-secondary btn-lg text-center px-5 m-2"><div class="size12 weight"><i class="bi bi-lock-fill"></i>&nbsp;已確認送出</div><div class="size08 yellow weight">$ConfirmSending_datetime</div></button>
-					<!--
-					<button $disabled type="button" class="btn btn-warning btn-lg text-center px-5 m-2" onclick="Reduction(this.form);"><div class="size12 weight"><i class="bi bi-unlock-fill"></i>&nbsp;還原確認</div><div class="size08 black weight">(還原後，可進行修改)</div></button>
-					-->
-				</div>
+        $show_ConfirmSending = <<<EOT
+        <div class="w-100 text-center">
+            <button disabled type="button" class="btn btn-secondary btn-lg text-center px-5 m-2">
+                <div class="size12 weight"><i class="bi bi-lock-fill"></i>&nbsp;已確認送出</div>
+                <div class="size08 yellow weight">$ConfirmSending_datetime</div>
+            </button>
+        </div>
 EOT;
 
-	} else {
+    } else {
 
-$show_ConfirmSending=<<<EOT
-				<div class="w-100 text-center">
-					<button $disabled type="button" class="btn btn-primary text-center px-4 my-2 mx-1" onclick="Checkall(this.form);"><div class="size12 weight text-nowrap">送出前讓系統再檢查乙次</div></button>
-					<button $disabled id="myConfirmSending" disabled type="button" class="btn btn-danger btn-lg text-center px-4 my-2 mx-1" onclick="ConfirmSending(this.form);"><div class="size12 weight text-nowrap">填寫完畢，確認送出</div><div class="size08 yellow weight text-nowrap">(一旦送出即無法修改)</div></button>
-				</div>
+        $show_ConfirmSending = <<<EOT
+        <div class="w-100 text-center">
+            <button $disabled type="button" class="btn btn-primary text-center px-4 my-2 mx-1" onclick="Checkall(this.form);">
+                <div class="size12 weight text-nowrap">送出前讓系統再檢查乙次</div>
+            </button>
+            <button $disabled id="myConfirmSending" disabled type="button" class="btn btn-danger btn-lg text-center px-4 my-2 mx-1" onclick="ConfirmSending(this.form);">
+                <div class="size12 weight text-nowrap">填寫完畢，確認送出</div>
+                <div class="size08 yellow weight text-nowrap">(一旦送出即無法修改)</div>
+            </button>
+        </div>
 EOT;
 
-	}
+    }
+
+} else {
+    // 非管理員 → 不顯示 或顯示提示
+    $show_ConfirmSending = '';
+}
 
 
 $m_location		= "/website/smarty/templates/".$site_db."/".$templates;
