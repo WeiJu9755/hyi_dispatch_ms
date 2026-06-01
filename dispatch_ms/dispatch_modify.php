@@ -12,11 +12,6 @@ $mem_row = getkeyvalue2('memberinfo','member',"member_no = '$memberID'",'admin,a
 $super_admin = $mem_row['admin'];
 
 $pjItemManager = false;
-//檢查是否為指定管理人(小隊長)
-$pjmyfellow_row = getkeyvalue2($site_db."_info","pjmyfellow","web_id = '$web_id' and project_id = '$project_id' and auth_id = '$auth_id' and pro_id = 'squadleader' and member_no = '$memberID'","count(*) as enable_count");
-$enable_count =$pjmyfellow_row['enable_count'];
-if ($enable_count > 0)
-	$pjItemManager = true;
 
 //計算請假時間
 function calculateLeaveHours($startTime, $endTime) {
@@ -564,6 +559,12 @@ if ($total > 0) {
 
 }
 
+//檢查是否為指定管理人(小隊長)
+$pjmyfellow_row = getkeyvalue2($site_db."_info","pjmyfellow","web_id = '$web_id' and project_id = '$project_id' and auth_id = '$auth_id' and pro_id = 'squadleader' and member_no = '$memberID'","count(*) as enable_count");
+$enable_count =$pjmyfellow_row['enable_count'];
+if ($enable_count > 0)
+	$pjItemManager = true;
+
 if (!empty($short_name)) {
 	$show_company_name = $short_name;
 } else {
@@ -667,7 +668,7 @@ else
 if (!($detect->isMobile() && !$detect->isTablet())) {
 	$isMobile = 0;
 	
-if($super_admin == "Y" || $ConfirmSending == "N" || $pjItemManager = true){
+if($super_admin == "Y" || $ConfirmSending == "N" || $pjItemManager === true){
 	$show_fellow_btn=<<<EOT
 <div class="btn-group" role="group">
 <button $disabled type="button" class="btn btn-danger text-nowrap px-4" onclick="openfancybox_edit('/index.php?ch=ch_contract&dispatch_id=$dispatch_id&contract_id=$contract_id&fm=$fm',1024,'96%','');"><i class="bi bi-plus-circle"></i>&nbsp;新增合約工作項目</button>
@@ -827,7 +828,7 @@ EOT;
 $warning_list = "warning_list".$auto_seq;
 
 $show_ConfirmSending = "";
-if ($super_admin == "Y") {
+if ($super_admin == "Y" || $pjItemManager === true) {
 
     if ($ConfirmSending == "Y") {
 
