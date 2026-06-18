@@ -53,6 +53,88 @@ $detect = new Mobile_Detect;
 $xajax = new xajax();
 
 $xajax->registerFunction("processform");
+$xajax->registerFunction("check_employee_dispatch");
+
+function showEmployeeDispatchNotice($employee_id,$dispatch_id,$site_db){
+
+	$employee_id = trim($employee_id);
+	$dispatch_id = trim($dispatch_id);
+	$site_db = trim($site_db);
+
+	if ($employee_id == "" || $dispatch_id == "") {
+		return "";
+	}
+
+	$dispatch_row = getkeyvalue2($site_db."_info","dispatch","dispatch_id = '$dispatch_id'","dispatch_date");
+	$dispatch_date = $dispatch_row['dispatch_date'];
+
+	if ($dispatch_date == "") {
+		return "<div class=\"alert alert-warning py-2 px-3 mt-2 mb-0 size12\">無法取得派工日期，暫時不能檢查員工當日派工狀態。</div>";
+	}
+
+	$mDB = "";
+	$mDB = new MywebDB();
+
+	$Qry = "SELECT a.dispatch_id,a.contract_id,a.seq,a.attendance_start,a.attendance_end,a.attendance_hours,a.attendance_remark,a.is_overtime,b.dispatch_date,c.work_project
+		FROM dispatch_attendance_sub a
+		LEFT JOIN dispatch b ON b.dispatch_id = a.dispatch_id
+		LEFT JOIN contract_details c ON c.contract_id = a.contract_id AND c.seq = a.seq
+		WHERE b.dispatch_date = '$dispatch_date' AND a.employee_id = '$employee_id'
+		ORDER BY a.dispatch_id,a.contract_id,a.seq,a.attendance_start";
+	$mDB->query($Qry);
+
+	$total = $mDB->rowCount();
+	if ($total <= 0) {
+		$mDB->remove();
+		return "<div class=\"alert alert-success py-2 px-3 mt-2 mb-0 size12\">提醒：此員工於 $dispatch_date 尚無已派工紀錄。</div>";
+	}
+
+	$total_hours = 0;
+	$notice_list = "";
+	while ($row=$mDB->fetchRow(2)) {
+		$show_dispatch_id = htmlspecialchars($row['dispatch_id'], ENT_QUOTES, 'UTF-8');
+		$show_contract_id = htmlspecialchars($row['contract_id'], ENT_QUOTES, 'UTF-8');
+		$show_seq = htmlspecialchars($row['seq'], ENT_QUOTES, 'UTF-8');
+		$show_work_project = htmlspecialchars($row['work_project'], ENT_QUOTES, 'UTF-8');
+		$show_attendance_remark = htmlspecialchars($row['attendance_remark'], ENT_QUOTES, 'UTF-8');
+		$attendance_hours = (float)$row['attendance_hours'];
+		$total_hours += $attendance_hours;
+
+		if (!empty($row['attendance_start']))
+			$attendance_start = date("H:i",strtotime($row['attendance_start']));
+		else
+			$attendance_start = "";
+
+		if (!empty($row['attendance_end']))
+			$attendance_end = date("H:i",strtotime($row['attendance_end']));
+		else
+			$attendance_end = "";
+
+		if (($attendance_start == "") || ($attendance_start == "00:00")) {
+			$attendance_start = "";
+		}
+		if (($attendance_end == "") || ($attendance_end == "00:00")) {
+			$attendance_end = "";
+		}
+
+		$overtime_text = ($row['is_overtime'] == "Y") ? "<span class=\"badge text-bg-warning ms-1\">加班</span>" : "";
+		$remark_text = ($show_attendance_remark != "") ? "<div class=\"small text-muted\">備註：$show_attendance_remark</div>" : "";
+
+		$notice_list .= "<li class=\"mb-1\">#$show_dispatch_id / $show_contract_id-$show_seq $show_work_project<br><span class=\"text-nowrap\">$attendance_start ~ $attendance_end ， $attendance_hours 小時</span>$overtime_text$remark_text</li>";
+	}
+	$mDB->remove();
+
+	return "<div class=\"alert alert-warning py-2 px-3 mt-2 mb-0 size12\"><div class=\"weight mb-1\">提醒：此員工於 $dispatch_date 已有派工，共 $total 小筆，合計 $total_hours 小時。</div><ul class=\"mb-0 ps-3\">$notice_list</ul></div>";
+}
+
+function check_employee_dispatch($employee_id,$dispatch_id,$site_db){
+
+	$objResponse = new xajaxResponse();
+	$notice_html = showEmployeeDispatchNotice($employee_id,$dispatch_id,$site_db);
+	$objResponse->assign("employee_dispatch_notice","innerHTML",$notice_html);
+
+	return $objResponse;
+}
 
 function processform($aFormValues){
 
@@ -241,6 +323,7 @@ $style_css
 								<input readonly type="text" class="form-control w-50" id="employee_name" name="employee_name"  value="$employee_name"/>
 								<button class="btn btn-outline-secondary w-25" type="button" id="employee_id_addon" onclick="openfancybox_edit('/index.php?ch=ch_employee&fm=$fm',700,'90%','');">選擇員工</button>
 							</div>
+							<div id="employee_dispatch_notice"></div>
 						</div>
 					</div>
 					<div>
@@ -308,6 +391,15 @@ $style_css
 function CheckValue(thisform) {
 	xajax_processform(xajax.getFormValues('addForm'));
 	thisform.submit();
+}
+
+function check_employee_dispatch_notice() {
+	var employee_id = $("#employee_id").val();
+	if (employee_id != "") {
+		xajax_check_employee_dispatch(employee_id, "$dispatch_id", "$site_db");
+	} else {
+		$("#employee_dispatch_notice").html("");
+	}
 }
 
 var myDraw = function(){

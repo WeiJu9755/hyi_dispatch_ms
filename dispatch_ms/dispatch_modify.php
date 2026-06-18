@@ -311,6 +311,8 @@ $xajax->registerFunction("Reduction");
 function Reduction($aFormValues){
 
 	$objResponse = new xajaxResponse();
+
+	$memberID			= $_SESSION['memberID'];
 	
 	$web_id				= trim($aFormValues['web_id']);
 	$auto_seq			= trim($aFormValues['auto_seq']);
@@ -318,9 +320,26 @@ function Reduction($aFormValues){
 	$auth_id			= trim($aFormValues['auth_id']);
 	$dispatch_id		= trim($aFormValues['dispatch_id']);
 	
+	$mem_row = getkeyvalue2('memberinfo','member',"member_no = '$memberID'",'admin');
+	$super_admin = $mem_row['admin'];
+	if ($super_admin != "Y") {
+		$objResponse->script("jAlert('警示', '您沒有確認還原權限', 'red', '', 2000);");
+		return $objResponse;
+	}
+	
 	//更新
 	$mDB = "";
 	$mDB = new MywebDB();
+	
+	$Qry="SELECT count(*) as material_count FROM dispatch_material_details where dispatch_id = '$dispatch_id'";
+	$mDB->query($Qry);
+	$row=$mDB->fetchRow(2);
+	$material_count = (int)$row['material_count'];
+	if ($material_count > 0) {
+		$mDB->remove();
+		$objResponse->script("jAlert('警示', '已有物料名稱/使用機具借出，無法確認還原', 'red', '', 2000);");
+		return $objResponse;
+	}
 	
 	$Qry="UPDATE dispatch set
 			ConfirmSending = 'N'
@@ -827,10 +846,31 @@ EOT;
 
 $warning_list = "warning_list".$auto_seq;
 
+$dispatch_material_count = 0;
+$mDB = "";
+$mDB = new MywebDB();
+$Qry="SELECT count(*) as material_count FROM dispatch_material_details where dispatch_id = '$dispatch_id'";
+$mDB->query($Qry);
+if ($mDB->rowCount() > 0) {
+	$row=$mDB->fetchRow(2);
+	$dispatch_material_count = (int)$row['material_count'];
+}
+$mDB->remove();
+
 $show_ConfirmSending = "";
 if ($super_admin == "Y" || $pjItemManager === true) {
 
     if ($ConfirmSending == "Y") {
+        $show_Reduction = "";
+		$restore_note = "(還原後，工程師即可修改)";
+        if ($super_admin == "Y" && $dispatch_material_count == 0) {
+            $show_Reduction = <<<EOT
+            <button type="button" class="btn btn-warning btn-lg text-center px-4 my-2 mx-1 text-black" onclick="Reduction(this.form);">
+                <div class="size12 weight text-nowrap"><i class="bi bi-arrow-counterclockwise"></i>&nbsp;確認還原</div>
+				 <div class="size08 weight text-nowrap">$restore_note</div>
+            </button>
+EOT;
+        }
 
         $show_ConfirmSending = <<<EOT
         <div class="w-100 text-center">
@@ -838,6 +878,7 @@ if ($super_admin == "Y" || $pjItemManager === true) {
                 <div class="size12 weight"><i class="bi bi-lock-fill"></i>&nbsp;已確認送出</div>
                 <div class="size08 yellow weight">$ConfirmSending_datetime</div>
             </button>
+            $show_Reduction
         </div>
 EOT;
 

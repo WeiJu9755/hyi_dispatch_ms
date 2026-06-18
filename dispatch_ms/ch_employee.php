@@ -32,6 +32,7 @@ function getchoice($dispatch_id,$contract_id,$seq,$employee_id){
 	$objResponse->script('xajax.config.baseDocument = parent.document;');
 	$objResponse->assign("employee_id","value",$employee_id);
 	$objResponse->assign("employee_name","value",$employee_name);
+	$objResponse->script("if (typeof parent.check_employee_dispatch_notice == 'function') { parent.check_employee_dispatch_notice(); }");
 	$objResponse->script('xajax.config.baseDocument = document;');
 
 
