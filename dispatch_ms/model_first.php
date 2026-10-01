@@ -39,6 +39,9 @@ switch($ch) {
 		$smarty->assign('show_center',$show_center);
 		$smarty->assign('xajax_javascript', $xajax->getJavascript('/xajax/'));
 		break;
+	case 'dispatch_report_excel':
+		include $m_location."/sub_modal/project/func08/dispatch_ms/dispatch_report_excel.php";
+		exit;
 	case 'mview':
 	case 'view':
 		$title = "資料瀏覽";
@@ -54,14 +57,6 @@ switch($ch) {
 		if (empty($sid))
 			$sid = "view01";
 		$modal = $m_location."/sub_modal/project/func08/dispatch_ms/dispatch_day_summary.php";
-		include $modal;
-		$smarty->assign('show_center',$show_center);
-		break;
-	case 'excel':
-		$title = "匯出Excel".$mt;
-		if (empty($sid))
-			$sid = "view01";
-		$modal = $m_location."/sub_modal/project/func08/dispatch_ms/dispatch_report_excel.php";
 		include $modal;
 		$smarty->assign('show_center',$show_center);
 		break;

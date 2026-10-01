@@ -627,6 +627,7 @@ $mDB->remove();
 
 $show_savebtn=<<<EOT
 <div class="btn-group vbottom" role="group" style="margin-top:5px;">
+	<a class="btn btn-success" href="/index.php?ch=dispatch_report_excel&amp;auto_seq=$auto_seq&amp;fm=dispatch" target="_blank" rel="noopener" style="padding: 5px 15px;"><i class="bi bi-file-earmark-excel"></i>&nbsp;匯出施工日誌</a>
 	<button $disabled id="save" class="btn btn-primary" type="button" onclick="CheckValue(this.form);" style="padding: 5px 15px;"><i class="bi bi-check-circle"></i>&nbsp;存檔</button>
 	<button $disabled id="cancel" class="btn btn-secondary display_none" type="button" onclick="setCancel();" style="padding: 5px 15px;"><i class="bi bi-x-circle"></i>&nbsp;取消</button>
 	<button id="close" class="btn btn-danger" type="button" onclick="parent.myDraw();parent.$.fancybox.close();" style="padding: 5px 15px;"><i class="bi bi-power"></i>&nbsp;關閉</button>
